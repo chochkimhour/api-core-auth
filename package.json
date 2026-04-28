@@ -1,7 +1,7 @@
 {
   "name": "api-core-auth",
-  "version": "0.1.0",
-  "description": "Reusable JWT authentication helpers, password utilities, Express middleware, errors, and TypeScript types for Node.js APIs.",
+  "version": "1.0.0",
+  "description": "Secure opaque token authentication for Node.js, Express, JavaScript, and TypeScript APIs with password helpers, middleware, errors, and types.",
   "type": "module",
   "license": "MIT",
   "author": "Choch Kimhour",
@@ -17,16 +17,36 @@
     "auth",
     "authentication",
     "authorization",
-    "jwt",
-    "jsonwebtoken",
+    "opaque",
+    "opaque-token",
+    "opaque-tokens",
+    "secure-token",
+    "secure-auth",
+    "token-auth",
+    "session-token",
+    "api-token",
+    "api-key",
+    "token",
+    "tokens",
+    "session",
+    "sessions",
+    "login",
+    "password",
+    "password-hashing",
     "bcrypt",
     "bcryptjs",
     "express",
+    "express-auth",
     "middleware",
     "node",
+    "nodejs",
     "typescript",
+    "javascript",
     "api",
-    "security"
+    "rest-api",
+    "backend",
+    "security",
+    "open-source"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -60,8 +80,7 @@
     "prepublishOnly": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2"
+    "bcryptjs": "^2.4.3"
   },
   "peerDependencies": {
     "express": ">=4.17.0 || >=5.0.0"
@@ -75,7 +94,6 @@
     "@eslint/js": "^9.25.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/express": "^5.0.1",
-    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.14.1",
     "eslint": "^9.25.1",
     "prettier": "^3.5.3",

@@ -1,4 +1,4 @@
-export * from "./jwt";
+export * from "./opaque";
 export * from "./password";
 export * from "./middleware";
 export * from "./errors";

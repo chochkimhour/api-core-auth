@@ -1,17 +1,24 @@
 import express, { type Request, type Response } from "express";
 import {
   authMiddleware,
+  compareOpaqueToken,
   comparePassword,
-  generateAccessToken,
-  generateRefreshToken,
-  optionalAuthMiddleware,
+  createOpaqueToken,
   roleMiddleware,
+  sanitizeUser,
   type AuthUser
 } from "api-core-auth";
 
 const app = express();
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
+const tokenPepper = process.env.OPAQUE_TOKEN_PEPPER;
+
+const tokenStore = new Map<
+  string,
+  {
+    tokenHash: string;
+    user: AuthUser;
+  }
+>();
 
 app.use(express.json());
 
@@ -32,33 +39,40 @@ app.post("/login", async (req: Request, res: Response) => {
     });
   }
 
-  const authUser: AuthUser = {
-    id: user.id,
-    email: user.email,
-    role: user.role
-  };
-
-  const accessToken = generateAccessToken(authUser, JWT_SECRET!, {
-    expiresIn: "15m"
+  const safeUser = sanitizeUser(user) as AuthUser;
+  const authToken = createOpaqueToken({
+    pepper: tokenPepper
   });
-  const refreshToken = generateRefreshToken({ id: user.id }, JWT_REFRESH_SECRET!, {
-    expiresIn: "7d"
+
+  tokenStore.set(String(user.id), {
+    tokenHash: authToken.tokenHash,
+    user: safeUser
   });
 
   return res.json({
     success: true,
     message: "Login successful",
     data: {
-      accessToken,
-      refreshToken
+      user: safeUser,
+      token: authToken.token
     }
   });
 });
 
+const verifyStoredToken = (token: string): AuthUser | null => {
+  for (const session of tokenStore.values()) {
+    if (compareOpaqueToken(token, session.tokenHash, tokenPepper)) {
+      return session.user;
+    }
+  }
+
+  return null;
+};
+
 app.get(
   "/profile",
   authMiddleware({
-    secret: JWT_SECRET!
+    verifyToken: verifyStoredToken
   }),
   (req: Request, res: Response) => {
     res.json({
@@ -72,29 +86,13 @@ app.get(
 app.get(
   "/admin",
   authMiddleware({
-    secret: JWT_SECRET!
+    verifyToken: verifyStoredToken
   }),
   roleMiddleware(["ADMIN"]),
   (_req: Request, res: Response) => {
     res.json({
       success: true,
       message: "Admin route accessed successfully"
-    });
-  }
-);
-
-app.get(
-  "/public",
-  optionalAuthMiddleware({
-    secret: JWT_SECRET!
-  }),
-  (req: Request, res: Response) => {
-    res.json({
-      success: true,
-      data: {
-        authenticated: Boolean(req.user),
-        user: req.user || null
-      }
     });
   }
 );

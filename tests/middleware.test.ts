@@ -2,14 +2,13 @@ import type { NextFunction, Request, Response } from "express";
 import { describe, expect, it, vi } from "vitest";
 import {
   authMiddleware,
+  compareOpaqueToken,
+  createOpaqueToken,
   ForbiddenError,
-  generateAccessToken,
   optionalAuthMiddleware,
   roleMiddleware,
   UnauthorizedError
 } from "../src";
-
-const secret = "test-secret-that-is-long-enough-for-tests";
 
 function createRequest(token?: string): Request {
   return {
@@ -18,32 +17,39 @@ function createRequest(token?: string): Request {
 }
 
 describe("Express middleware", () => {
-  it("attaches req.user for valid tokens", () => {
-    const token = generateAccessToken({ id: "1", role: "ADMIN" }, secret);
-    const req = createRequest(token);
+  it("attaches req.user for valid tokens", async () => {
+    const tokenPair = createOpaqueToken();
+    const req = createRequest(tokenPair.token);
     const next = vi.fn() as NextFunction;
 
-    authMiddleware({ secret })(req, {} as Response, next);
+    await authMiddleware({
+      verifyToken: (token) =>
+        compareOpaqueToken(token, tokenPair.tokenHash) ? { id: "1", role: "ADMIN" } : null
+    })(req, {} as Response, next);
 
     expect(req.user?.id).toBe("1");
     expect(req.user?.role).toBe("ADMIN");
     expect(next).toHaveBeenCalledWith();
   });
 
-  it("passes UnauthorizedError when a token is missing", () => {
+  it("passes UnauthorizedError when a token is missing", async () => {
     const req = createRequest();
     const next = vi.fn() as NextFunction;
 
-    authMiddleware({ secret })(req, {} as Response, next);
+    await authMiddleware({
+      verifyToken: () => ({ id: "1" })
+    })(req, {} as Response, next);
 
     expect(next).toHaveBeenCalledWith(expect.any(UnauthorizedError));
   });
 
-  it("optional auth continues when token is missing or invalid", () => {
+  it("optional auth continues when token is missing or invalid", async () => {
     const req = createRequest("invalid-token");
     const next = vi.fn() as NextFunction;
 
-    optionalAuthMiddleware({ secret })(req, {} as Response, next);
+    await optionalAuthMiddleware({
+      verifyToken: () => null
+    })(req, {} as Response, next);
 
     expect(req.user).toBeUndefined();
     expect(next).toHaveBeenCalledWith();

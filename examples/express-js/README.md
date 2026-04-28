@@ -1,10 +1,10 @@
 # Express JavaScript Example
 
-This example shows CommonJS usage with `require("api-core-auth")`.
+This example shows CommonJS usage with opaque tokens and `require("api-core-auth")`.
 
 ```bash
 npm install
-JWT_SECRET=replace-with-a-long-random-secret npm start
+OPAQUE_TOKEN_PEPPER=replace-with-a-long-random-secret npm start
 ```
 
 The demo password hash is for `Password123`.

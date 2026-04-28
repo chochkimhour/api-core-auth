@@ -6,7 +6,6 @@ declare global {
       user?: AuthUser;
       auth?: {
         token: string;
-        payload: unknown;
       };
     }
   }

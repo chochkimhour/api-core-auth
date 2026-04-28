@@ -5,64 +5,63 @@
 [![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](package.json)
 [![types: included](https://img.shields.io/badge/types-included-0f8fcf.svg)](package.json)
 
-Reusable JWT authentication helpers, password utilities, Express middleware, error classes, and TypeScript types for production Node.js APIs.
+Secure opaque-token authentication helpers, password utilities, Express middleware, error classes, and TypeScript types for production Node.js APIs.
 
 ## What Is api-core-auth?
 
 `api-core-auth` is a small authentication toolkit for JavaScript and TypeScript backend projects.
 
-It helps you handle the common authentication tasks that many APIs need:
+It uses **opaque tokens** instead of readable token payloads. An opaque token is a secure random string. It does not contain user data, roles, emails, or private information inside the token.
 
-- Create JWT access tokens.
-- Create JWT refresh tokens.
-- Verify and decode JWT tokens.
-- Extract Bearer tokens from request headers.
-- Hash and compare passwords with bcrypt.
-- Validate password strength.
-- Protect Express routes with authentication middleware.
-- Restrict routes by user role.
-- Remove password fields before returning user objects.
-- Use consistent authentication error classes.
-- Use strong TypeScript types in your app.
+That makes the package simple and safe:
 
-The package is designed for real-world backend APIs, but it stays flexible. It does not force a database, user model, session model, or application structure.
+- Users cannot decode the token and read hidden data.
+- Your server stays in control of token validation.
+- Tokens can be revoked by removing or disabling the stored token hash.
+- Only token hashes need to be stored in your database.
+- The package does not connect to your database or force a user model.
 
-## Why Use It?
+## Why Opaque Tokens?
 
-Most backend projects need the same authentication tools. `api-core-auth` keeps those parts clean, reusable, and easy to understand.
+Opaque tokens are a strong default for applications that want users and teams to feel safe.
 
-Use it when you want:
+Use opaque tokens for:
 
-- A simple auth foundation for Node.js APIs.
-- JavaScript and TypeScript support.
-- CommonJS `require()` support.
-- ES module `import` support.
-- Ready-to-use Express middleware.
-- Framework-independent JWT and password helpers.
-- Safe package error classes.
-- TypeScript types included.
-- No database lock-in.
-- No hidden user-management logic.
+- Login sessions
+- API authentication
+- Refresh tokens
+- Password reset links
+- Email verification links
+- Invitation links
+- API keys
+
+The token sent to the client is random and unreadable. The server stores a hash of that token and compares it when the token is used again.
+
+```txt
+Client receives raw token
+Server stores token hash
+Client sends raw token in Authorization header
+Server hashes and compares it with stored hash
+```
 
 ## What This Package Does
 
-`api-core-auth` provides reusable authentication helpers only.
+`api-core-auth` provides reusable authentication helpers:
 
-It can:
-
-- Generate access tokens.
-- Generate refresh tokens.
-- Verify tokens.
-- Decode tokens.
-- Parse Bearer tokens.
-- Hash passwords.
-- Compare passwords.
+- Generate secure opaque tokens.
+- Hash opaque tokens before storage.
+- Compare opaque tokens with stored hashes.
+- Extract Bearer tokens from request headers.
+- Hash passwords with bcrypt.
+- Compare passwords with bcrypt.
 - Validate password strength.
-- Add authenticated users to Express requests.
-- Check roles in Express routes.
+- Protect Express routes.
+- Support optional authentication.
+- Restrict routes by role.
 - Sanitize user objects.
-- Create auth response objects.
-- Throw safe authentication errors.
+- Create consistent auth responses.
+- Provide safe authentication error classes.
+- Provide TypeScript types.
 
 ## What This Package Does Not Do
 
@@ -74,9 +73,8 @@ It does **not**:
 - Register users.
 - Find users by email.
 - Validate login credentials from a database.
-- Store refresh tokens.
-- Rotate refresh tokens.
-- Revoke refresh tokens.
+- Store tokens for you.
+- Revoke tokens for you.
 - Decide your user schema.
 - Manage sessions for you.
 
@@ -84,14 +82,13 @@ Your application is responsible for:
 
 - User registration.
 - User lookup.
-- Password validation flow.
 - Database queries.
-- Refresh-token storage.
-- Refresh-token revocation.
-- Secret management.
+- Storing token hashes.
+- Token expiration policy.
+- Token revocation.
 - Application-specific authorization rules.
 
-This keeps the package clean, predictable, and useful across many projects.
+This keeps the package secure, flexible, and easy to use in different backend projects.
 
 ## Installation
 
@@ -105,18 +102,34 @@ If you want to use the Express middleware, install Express in your application:
 npm install express
 ```
 
+## Environment Variables
+
+Use a server-side pepper when hashing opaque tokens. Keep it secret.
+
+```env
+OPAQUE_TOKEN_PEPPER=replace-with-a-long-random-server-side-secret
+```
+
+The pepper is optional, but recommended. It adds an extra server-side secret to token hashing.
+
 ## Quick Start
+
+This example uses an in-memory `Map` to keep the example simple. In a real application, store token hashes in your database.
 
 ```js
 const express = require("express");
 const {
-  comparePassword,
-  generateAccessToken,
   authMiddleware,
-  roleMiddleware
+  compareOpaqueToken,
+  comparePassword,
+  createOpaqueToken,
+  roleMiddleware,
+  sanitizeUser
 } = require("api-core-auth");
 
 const app = express();
+const tokenPepper = process.env.OPAQUE_TOKEN_PEPPER;
+const tokenStore = new Map();
 
 app.use(express.json());
 
@@ -137,31 +150,40 @@ app.post("/login", async (req, res) => {
     });
   }
 
-  const accessToken = generateAccessToken(
-    {
-      id: user.id,
-      email: user.email,
-      role: user.role
-    },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: "15m"
-    }
-  );
+  const safeUser = sanitizeUser(user);
+  const authToken = createOpaqueToken({
+    pepper: tokenPepper
+  });
+
+  tokenStore.set(user.id, {
+    tokenHash: authToken.tokenHash,
+    user: safeUser
+  });
 
   return res.json({
     success: true,
     message: "Login successful",
     data: {
-      accessToken
+      user: safeUser,
+      token: authToken.token
     }
   });
 });
 
+const verifyStoredToken = (token) => {
+  for (const session of tokenStore.values()) {
+    if (compareOpaqueToken(token, session.tokenHash, tokenPepper)) {
+      return session.user;
+    }
+  }
+
+  return null;
+};
+
 app.get(
   "/profile",
   authMiddleware({
-    secret: process.env.JWT_SECRET
+    verifyToken: verifyStoredToken
   }),
   (req, res) => {
     res.json({
@@ -174,7 +196,7 @@ app.get(
 app.get(
   "/admin",
   authMiddleware({
-    secret: process.env.JWT_SECRET
+    verifyToken: verifyStoredToken
   }),
   roleMiddleware(["ADMIN"]),
   (_req, res) => {
@@ -186,12 +208,31 @@ app.get(
 );
 ```
 
+## Example Login Response
+
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "id": "1",
+      "email": "admin@example.com",
+      "role": "ADMIN"
+    },
+    "token": "N03tY5gO9B4oPz0V6xJhO3dYb-4QmYQ9u0zV2S3xZ3M"
+  }
+}
+```
+
+The response sends the raw token once. Store only the token hash on the server.
+
 ## JavaScript Usage
 
 ```js
 const {
-  generateAccessToken,
-  verifyToken,
+  createOpaqueToken,
+  compareOpaqueToken,
   hashPassword,
   comparePassword,
   authMiddleware,
@@ -203,8 +244,8 @@ const {
 
 ```ts
 import {
-  generateAccessToken,
-  verifyToken,
+  createOpaqueToken,
+  compareOpaqueToken,
   hashPassword,
   comparePassword,
   authMiddleware,
@@ -212,22 +253,6 @@ import {
   type AuthUser
 } from "api-core-auth";
 ```
-
-## Environment Variables
-
-Keep secrets outside your source code.
-
-```env
-JWT_SECRET=replace-with-a-long-random-secret
-JWT_REFRESH_SECRET=replace-with-another-long-random-secret
-```
-
-Recommended usage:
-
-- Use a long random secret.
-- Use different secrets for access tokens and refresh tokens when possible.
-- Keep access-token expiration short.
-- Store secrets in your environment or secret manager.
 
 ## Framework Compatibility
 
@@ -250,19 +275,18 @@ The core helpers can be used with:
 - Native Node.js HTTP servers
 - Custom Node.js backends
 
-For non-Express frameworks, use helpers such as `verifyToken()`, `extractBearerToken()`, `hashPassword()`, and `comparePassword()` inside your own middleware, hook, guard, or request handler.
+For non-Express frameworks, use `extractBearerToken()`, `compareOpaqueToken()`, `hashPassword()`, and `comparePassword()` inside your own middleware, hook, guard, or request handler.
 
 ## Features
 
-### JWT Helpers
+### Opaque Token Helpers
 
 | Function | Purpose |
 | --- | --- |
-| `generateAccessToken()` | Create a JWT access token. |
-| `generateRefreshToken()` | Create a JWT refresh token. |
-| `generateToken()` | Create a custom JWT token. |
-| `verifyToken()` | Verify a token and return its payload. |
-| `decodeToken()` | Decode a token without verifying it. |
+| `generateOpaqueToken()` | Create a secure random token with no readable payload. |
+| `hashOpaqueToken()` | Hash an opaque token before storing it. |
+| `compareOpaqueToken()` | Compare a raw opaque token with a stored hash. |
+| `createOpaqueToken()` | Create a raw opaque token and storage-safe hash together. |
 | `extractBearerToken()` | Extract a token from a Bearer authorization header. |
 
 ### Password Helpers
@@ -277,7 +301,7 @@ For non-Express frameworks, use helpers such as `verifyToken()`, `extractBearerT
 
 | Function | Purpose |
 | --- | --- |
-| `authMiddleware()` | Require a valid JWT and attach `req.user`. |
+| `authMiddleware()` | Require a valid opaque token and attach `req.user`. |
 | `optionalAuthMiddleware()` | Attach `req.user` when a valid token exists, but allow guests. |
 | `roleMiddleware()` | Require one or more allowed roles. |
 
@@ -300,74 +324,58 @@ For non-Express frameworks, use helpers such as `verifyToken()`, `extractBearerT
 ### TypeScript Types
 
 - `AuthUser`
-- `JwtPayload`
-- `AuthConfig`
 - `TokenPair`
 - `AuthMiddlewareOptions`
 - `Role`
 
-## JWT Examples
+## Opaque Token Examples
 
-### Generate an Access Token
-
-```ts
-import { generateAccessToken } from "api-core-auth";
-
-const accessToken = generateAccessToken(
-  {
-    id: "1",
-    email: "admin@example.com",
-    role: "ADMIN"
-  },
-  process.env.JWT_SECRET!,
-  {
-    expiresIn: "15m"
-  }
-);
-```
-
-### Generate a Refresh Token
+### Create a Token
 
 ```ts
-import { generateRefreshToken } from "api-core-auth";
+import { createOpaqueToken } from "api-core-auth";
 
-const refreshToken = generateRefreshToken(
-  {
-    id: "1"
-  },
-  process.env.JWT_REFRESH_SECRET!,
-  {
-    expiresIn: "7d"
-  }
-);
+const authToken = createOpaqueToken({
+  byteLength: 32,
+  pepper: process.env.OPAQUE_TOKEN_PEPPER
+});
+
+// Send authToken.token to the client.
+// Store authToken.tokenHash in your database.
 ```
-
-Your application should store, rotate, and revoke refresh tokens if your auth flow needs refresh-token sessions.
 
 ### Verify a Token
 
 ```ts
-import { verifyToken } from "api-core-auth";
+import { compareOpaqueToken } from "api-core-auth";
 
-const payload = verifyToken(accessToken, process.env.JWT_SECRET!);
+const isValidToken = compareOpaqueToken(
+  tokenFromRequest,
+  storedTokenHash,
+  process.env.OPAQUE_TOKEN_PEPPER
+);
 ```
-
-### Decode a Token
-
-```ts
-import { decodeToken } from "api-core-auth";
-
-const decoded = decodeToken(accessToken);
-```
-
-Use `decodeToken()` only for inspection. Do not use decoded-only data for authentication or authorization.
 
 ### Extract a Bearer Token
 
 ```ts
 import { extractBearerToken } from "api-core-auth";
 
-const token = extractBearerToken("Bearer eyJhbGciOi...");
+const token = extractBearerToken(req.headers.authorization);
+```
+
+### Password Reset Token
+
+```ts
+import { createOpaqueToken } from "api-core-auth";
+
+const resetToken = createOpaqueToken({
+  byteLength: 32,
+  pepper: process.env.OPAQUE_TOKEN_PEPPER
+});
+
+// Email resetToken.token to the user.
+// Store resetToken.tokenHash with an expiration date in your database.
 ```
 
 ## Password Examples
@@ -406,79 +414,64 @@ if (!result.valid) {
 }
 ```
 
-## Express Examples
+## Express Middleware
 
-### Login Route
+### Required Auth
 
-Your app fetches the user from your database. Then `api-core-auth` helps compare the password and create tokens.
-
-```js
-const express = require("express");
-const {
-  comparePassword,
-  generateAccessToken,
-  generateRefreshToken,
-  sanitizeUser
-} = require("api-core-auth");
-
-const app = express();
-
-app.use(express.json());
-
-app.post("/login", async (req, res) => {
-  const user = {
-    id: "1",
-    email: "admin@example.com",
-    password: "$2b$10$hashedPassword",
-    role: "ADMIN"
-  };
-
-  const isValidPassword = await comparePassword(req.body.password, user.password);
-
-  if (!isValidPassword) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid email or password"
-    });
-  }
-
-  const safeUser = sanitizeUser(user);
-
-  const accessToken = generateAccessToken(safeUser, process.env.JWT_SECRET, {
-    expiresIn: "15m"
-  });
-
-  const refreshToken = generateRefreshToken({ id: user.id }, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: "7d"
-  });
-
-  return res.json({
-    success: true,
-    message: "Login successful",
-    data: {
-      user: safeUser,
-      accessToken,
-      refreshToken
-    }
-  });
-});
-```
-
-### Protected Route
+`authMiddleware()` requires a valid token. Your application provides `verifyToken`, which checks the raw token against your stored token hash and returns the authenticated user.
 
 ```ts
-import { authMiddleware } from "api-core-auth";
+import { authMiddleware, hashOpaqueToken } from "api-core-auth";
 
 app.get(
   "/profile",
   authMiddleware({
-    secret: process.env.JWT_SECRET!
+    verifyToken: async (token) => {
+      const tokenHash = hashOpaqueToken(token, process.env.OPAQUE_TOKEN_PEPPER);
+      const session = await db.sessions.findUnique({
+        where: {
+          tokenHash
+        },
+        include: {
+          user: true
+        }
+      });
+
+      if (!session) {
+        return null;
+      }
+
+      return session.user;
+    }
   }),
   (req, res) => {
     res.json({
       success: true,
-      message: "Profile fetched successfully",
       data: req.user
+    });
+  }
+);
+```
+
+### Optional Auth
+
+Use optional authentication for routes that support both guests and signed-in users.
+
+```ts
+import { optionalAuthMiddleware } from "api-core-auth";
+
+app.get(
+  "/feed",
+  optionalAuthMiddleware({
+    verifyToken: verifyStoredToken
+  }),
+  (req, res) => {
+    res.json({
+      success: true,
+      data: {
+        authenticated: Boolean(req.user),
+        user: req.user || null
+      }
     });
   }
 );
@@ -492,7 +485,7 @@ import { authMiddleware, roleMiddleware } from "api-core-auth";
 app.get(
   "/admin",
   authMiddleware({
-    secret: process.env.JWT_SECRET!
+    verifyToken: verifyStoredToken
   }),
   roleMiddleware(["ADMIN"]),
   (_req, res) => {
@@ -505,30 +498,6 @@ app.get(
 ```
 
 `roleMiddleware()` checks both `req.user.role` and `req.user.roles`.
-
-### Optional Authentication
-
-Use optional authentication for routes that support both guests and signed-in users.
-
-```ts
-import { optionalAuthMiddleware } from "api-core-auth";
-
-app.get(
-  "/feed",
-  optionalAuthMiddleware({
-    secret: process.env.JWT_SECRET!
-  }),
-  (req, res) => {
-    res.json({
-      success: true,
-      data: {
-        authenticated: Boolean(req.user),
-        user: req.user || null
-      }
-    });
-  }
-);
-```
 
 ## Utility Examples
 
@@ -552,8 +521,7 @@ import { createAuthResponse } from "api-core-auth";
 
 const response = createAuthResponse({
   user: safeUser,
-  accessToken,
-  refreshToken,
+  token: authToken.token,
   message: "Login successful"
 });
 ```
@@ -589,15 +557,14 @@ app.use((err, _req, res, _next) => {
 
 ## API Reference
 
-### JWT
+### Opaque Tokens
 
 | API | Description |
 | --- | --- |
-| `generateToken(payload, secret, options?)` | Signs a custom JWT payload. |
-| `generateAccessToken(user, secret, options?)` | Signs an access token. Default expiration is `15m`. |
-| `generateRefreshToken(user, secret, options?)` | Signs a refresh token. Default expiration is `7d`. |
-| `verifyToken(token, secret, options?)` | Verifies a token and returns the payload. |
-| `decodeToken(token, options?)` | Decodes a token without verifying it. |
+| `generateOpaqueToken(options?)` | Creates a secure random token with no readable payload. |
+| `hashOpaqueToken(token, pepper?)` | Creates a SHA-256 hash for database storage. |
+| `compareOpaqueToken(token, tokenHash, pepper?)` | Compares a raw token with a stored hash using constant-time comparison. |
+| `createOpaqueToken(options?)` | Returns `{ token, tokenHash }` for send-and-store flows. |
 | `extractBearerToken(header)` | Returns a token from a valid Bearer header or `null`. |
 
 ### Password
@@ -629,32 +596,24 @@ app.use((err, _req, res, _next) => {
 The package includes TypeScript types for safer application code.
 
 ```ts
-import type {
-  AuthConfig,
-  AuthMiddlewareOptions,
-  AuthUser,
-  JwtPayload,
-  Role,
-  TokenPair
-} from "api-core-auth";
+import type { AuthMiddlewareOptions, AuthUser, Role, TokenPair } from "api-core-auth";
 ```
 
 Express request augmentation is included, so `req.user` is available after using the middleware.
 
 ## Security Notes
 
-- Never hardcode JWT secrets.
-- Use long, random secrets from environment variables or a secret manager.
-- Prefer separate secrets for access tokens and refresh tokens.
-- Keep access-token expiration short.
-- Store refresh tokens in your own database if your app uses refresh-token sessions.
-- Hash refresh tokens before storing them.
+- Opaque tokens do not contain readable user data.
+- Store only token hashes in your database.
+- Send the raw token to the client only once.
+- Use a server-side pepper when possible.
+- Add expiration dates to stored tokens.
+- Revoke tokens by deleting or disabling their stored hash.
 - Never return password fields in API responses.
 - Return generic login errors such as `Invalid email or password`.
 - Use HTTPS in production.
-- Use `verifyToken()` before trusting token data.
-- Do not use `decodeToken()` for authorization.
 - Avoid returning raw internal errors to API users.
+- Keep database lookup and token storage inside your application.
 
 ## Contributing
 

@@ -1,16 +1,17 @@
 const express = require("express");
 const {
-  generateAccessToken,
-  generateRefreshToken,
-  comparePassword,
   authMiddleware,
-  optionalAuthMiddleware,
-  roleMiddleware
+  compareOpaqueToken,
+  comparePassword,
+  createOpaqueToken,
+  roleMiddleware,
+  sanitizeUser
 } = require("api-core-auth");
 
 const app = express();
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
+const tokenPepper = process.env.OPAQUE_TOKEN_PEPPER;
+
+const tokenStore = new Map();
 
 app.use(express.json());
 
@@ -31,25 +32,21 @@ app.post("/login", async (req, res) => {
     });
   }
 
-  const authUser = {
-    id: user.id,
-    email: user.email,
-    role: user.role
-  };
-
-  const accessToken = generateAccessToken(authUser, JWT_SECRET, {
-    expiresIn: "15m"
+  const authToken = createOpaqueToken({
+    pepper: tokenPepper
   });
-  const refreshToken = generateRefreshToken({ id: user.id }, JWT_REFRESH_SECRET, {
-    expiresIn: "7d"
+
+  tokenStore.set(user.id, {
+    tokenHash: authToken.tokenHash,
+    user: sanitizeUser(user)
   });
 
   return res.json({
     success: true,
     message: "Login successful",
     data: {
-      accessToken,
-      refreshToken
+      user: sanitizeUser(user),
+      token: authToken.token
     }
   });
 });
@@ -57,7 +54,15 @@ app.post("/login", async (req, res) => {
 app.get(
   "/profile",
   authMiddleware({
-    secret: JWT_SECRET
+    verifyToken: (token) => {
+      for (const session of tokenStore.values()) {
+        if (compareOpaqueToken(token, session.tokenHash, tokenPepper)) {
+          return session.user;
+        }
+      }
+
+      return null;
+    }
   }),
   (req, res) => {
     res.json({
@@ -71,7 +76,15 @@ app.get(
 app.get(
   "/admin",
   authMiddleware({
-    secret: JWT_SECRET
+    verifyToken: (token) => {
+      for (const session of tokenStore.values()) {
+        if (compareOpaqueToken(token, session.tokenHash, tokenPepper)) {
+          return session.user;
+        }
+      }
+
+      return null;
+    }
   }),
   roleMiddleware(["ADMIN"]),
   (_req, res) => {
@@ -81,32 +94,6 @@ app.get(
     });
   }
 );
-
-app.get(
-  "/public",
-  optionalAuthMiddleware({
-    secret: JWT_SECRET
-  }),
-  (req, res) => {
-    res.json({
-      success: true,
-      data: {
-        authenticated: Boolean(req.user),
-        user: req.user || null
-      }
-    });
-  }
-);
-
-app.use((err, _req, res, _next) => {
-  const statusCode = err.statusCode || 500;
-
-  res.status(statusCode).json({
-    success: false,
-    message: err.expose ? err.message : "Internal server error",
-    code: err.code || "INTERNAL_SERVER_ERROR"
-  });
-});
 
 app.listen(3000, () => {
   console.log("Server running on port 3000");

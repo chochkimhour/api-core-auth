@@ -1,11 +1,9 @@
 import type { NextFunction, Request, Response } from "express";
-import { extractBearerToken } from "../jwt/extract-bearer-token";
-import { verifyToken } from "../jwt/verify-token";
+import { extractBearerToken } from "../opaque/extract-bearer-token";
 import type { AuthMiddlewareOptions } from "../types/auth-middleware-options";
-import { defaultMapPayloadToUser } from "./payload-to-user";
 
 export function optionalAuthMiddleware(options: AuthMiddlewareOptions) {
-  return (req: Request, _res: Response, next: NextFunction): void => {
+  return async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     const token =
       options.tokenExtractor?.(req) ?? extractBearerToken(req.headers.authorization ?? null);
 
@@ -15,12 +13,14 @@ export function optionalAuthMiddleware(options: AuthMiddlewareOptions) {
     }
 
     try {
-      const payload = verifyToken(token, options.secret, options.verifyOptions);
-      req.user = (options.mapPayloadToUser ?? defaultMapPayloadToUser)(payload);
-      req.auth = {
-        token,
-        payload
-      };
+      const user = await options.verifyToken(token, req);
+
+      if (user && typeof user === "object") {
+        req.user = user;
+        req.auth = {
+          token
+        };
+      }
     } catch {
       req.user = undefined;
       req.auth = undefined;

@@ -6,6 +6,7 @@ export interface AuthResponse<TUser extends AuthUser = AuthUser> {
   message: string;
   data: {
     user: TUser;
+    token?: string;
     accessToken?: string;
     refreshToken?: string;
     tokens?: TokenPair;
@@ -14,6 +15,7 @@ export interface AuthResponse<TUser extends AuthUser = AuthUser> {
 
 export interface CreateAuthResponseOptions<TUser extends AuthUser = AuthUser> {
   user: TUser;
+  token?: string;
   accessToken?: string;
   refreshToken?: string;
   tokens?: TokenPair;
@@ -22,6 +24,7 @@ export interface CreateAuthResponseOptions<TUser extends AuthUser = AuthUser> {
 
 export function createAuthResponse<TUser extends AuthUser = AuthUser>({
   user,
+  token,
   accessToken,
   refreshToken,
   tokens,
@@ -32,6 +35,7 @@ export function createAuthResponse<TUser extends AuthUser = AuthUser>({
     message,
     data: {
       user,
+      ...(token ? { token } : {}),
       ...(accessToken ? { accessToken } : {}),
       ...(refreshToken ? { refreshToken } : {}),
       ...(tokens ? { tokens } : {})
