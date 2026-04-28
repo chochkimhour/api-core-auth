@@ -1,14 +1,14 @@
 # api-core-auth
 
-[![npm](https://img.shields.io/npm/v/api-core-auth?label=npm&color=cb3837)](https://www.npmjs.com/package/api-core-auth)
-[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](package.json)
-[![types: included](https://img.shields.io/badge/types-included-0f8fcf.svg)](package.json)
-[![source](https://img.shields.io/badge/source-GitLab-fc6d26.svg)](https://gitlab.com/chochkimhour/api-core-auth)
+![npm version](https://img.shields.io/npm/v/api-core-auth?style=flat-square)
+![license](https://img.shields.io/npm/l/api-core-auth?style=flat-square)
+![npm downloads](https://img.shields.io/npm/dm/api-core-auth?style=flat-square)
+![dependencies](https://img.shields.io/badge/dependencies-bcryptjs-brightgreen?style=flat-square)
+![types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)
+![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=flat-square)
+[![source](https://img.shields.io/badge/source-GitLab-orange?style=flat-square)](https://gitlab.com/chochkimhour/api-core-auth)
 
 Secure opaque-token authentication helpers, password utilities, Express middleware, error classes, and TypeScript types for production Node.js APIs.
-
-## What Is api-core-auth?
 
 `api-core-auth` is a small authentication toolkit for JavaScript and TypeScript backend projects.
 
@@ -799,4 +799,4 @@ See `CONTRIBUTING.md` for contribution details.
 
 MIT License.
 
-Copyright (c) 2026 Choch Kimhour.
+Copyright (c) 2026-present Choch Kimhour.
