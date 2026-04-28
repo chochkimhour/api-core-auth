@@ -80,6 +80,7 @@ It does **not**:
 
 Your application is responsible for:
 
+- Creating the first admin user.
 - User registration.
 - User lookup.
 - Database queries.
@@ -89,6 +90,178 @@ Your application is responsible for:
 - Application-specific authorization rules.
 
 This keeps the package secure, flexible, and easy to use in different backend projects.
+
+## Recommended Application Flow
+
+`api-core-auth` should be used inside your application auth flow. It should not run by itself, create users, or create a default admin account.
+
+The recommended flow is:
+
+```txt
+1. Create or seed a user in your application
+2. Hash the user's password with hashPassword()
+3. Store the user and password hash in your database
+4. On login, find the user from your database
+5. Compare the submitted password with comparePassword()
+6. Create an opaque token with createOpaqueToken()
+7. Store only tokenHash in your database
+8. Send token to the client
+9. Protect routes with authMiddleware()
+10. Revoke access by deleting or disabling the stored token hash
+```
+
+### Admin User Flow
+
+For production apps, create the first admin user in your own application.
+
+Good options:
+
+- Database seed script
+- Secure setup command
+- Private admin invite flow
+- Manual admin creation from an internal tool
+
+Avoid auto-creating an admin user inside an npm package. A reusable package should not secretly create users, choose default credentials, or control your database.
+
+Example admin setup flow:
+
+```txt
+First app setup
+→ your app creates admin@example.com
+→ your app stores the hashed password
+→ admin logs in
+→ api-core-auth creates an opaque token
+→ your app stores the token hash
+→ admin uses the raw token to access protected routes
+```
+
+### Register Flow
+
+```ts
+import { hashPassword, sanitizeUser } from "api-core-auth";
+
+const passwordHash = await hashPassword(req.body.password, 12);
+
+const user = await db.users.create({
+  data: {
+    email: req.body.email,
+    password: passwordHash,
+    role: "USER"
+  }
+});
+
+return res.status(201).json({
+  success: true,
+  message: "User registered successfully",
+  data: {
+    user: sanitizeUser(user)
+  }
+});
+```
+
+### Login Flow
+
+```ts
+import { comparePassword, createOpaqueToken, sanitizeUser } from "api-core-auth";
+
+const user = await db.users.findUnique({
+  where: {
+    email: req.body.email
+  }
+});
+
+if (!user) {
+  return res.status(401).json({
+    success: false,
+    message: "Invalid email or password"
+  });
+}
+
+const isValidPassword = await comparePassword(req.body.password, user.password);
+
+if (!isValidPassword) {
+  return res.status(401).json({
+    success: false,
+    message: "Invalid email or password"
+  });
+}
+
+const authToken = createOpaqueToken({
+  pepper: process.env.OPAQUE_TOKEN
+});
+
+await db.sessions.create({
+  data: {
+    userId: user.id,
+    tokenHash: authToken.tokenHash,
+    expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
+  }
+});
+
+return res.json({
+  success: true,
+  message: "Login successful",
+  data: {
+    user: sanitizeUser(user),
+    token: authToken.token
+  }
+});
+```
+
+### Protected Route Flow
+
+```ts
+import { authMiddleware, hashOpaqueToken } from "api-core-auth";
+
+app.get(
+  "/profile",
+  authMiddleware({
+    verifyToken: async (token) => {
+      const tokenHash = hashOpaqueToken(token, process.env.OPAQUE_TOKEN);
+
+      const session = await db.sessions.findUnique({
+        where: {
+          tokenHash
+        },
+        include: {
+          user: true
+        }
+      });
+
+      if (!session || session.expiresAt < new Date()) {
+        return null;
+      }
+
+      return session.user;
+    }
+  }),
+  (req, res) => {
+    res.json({
+      success: true,
+      data: req.user
+    });
+  }
+);
+```
+
+### Logout Flow
+
+```ts
+import { hashOpaqueToken } from "api-core-auth";
+
+const tokenHash = hashOpaqueToken(tokenFromRequest, process.env.OPAQUE_TOKEN);
+
+await db.sessions.delete({
+  where: {
+    tokenHash
+  }
+});
+
+return res.json({
+  success: true,
+  message: "Logged out successfully"
+});
+```
 
 ## Installation
 
