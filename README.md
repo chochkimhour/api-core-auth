@@ -6,7 +6,7 @@
 ![dependencies](https://img.shields.io/badge/dependencies-bcryptjs-brightgreen?style=flat-square)
 ![types](https://img.shields.io/badge/types-TypeScript-blue?style=flat-square)
 ![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=flat-square)
-[![source](https://img.shields.io/badge/source-GitLab-orange?style=flat-square)](https://gitlab.com/chochkimhour/api-core-auth)
+[![source](https://img.shields.io/badge/source-GitHub-black?style=flat-square)](https://github.com/chochkimhour/api-core-auth)
 
 Secure opaque-token authentication helpers, password utilities, Express middleware, error classes, and TypeScript types for production Node.js APIs.
 
@@ -799,4 +799,4 @@ See `CONTRIBUTING.md` for contribution details.
 
 MIT License.
 
-Copyright (c) 2026-present Choch Kimhour.
+Copyright (c) 2026 Choch Kimhour.

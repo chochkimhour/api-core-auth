@@ -8,10 +8,10 @@
   "homepage": "https://www.npmjs.com/package/api-core-auth",
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.com/chochkimhour/api-core-auth.git"
+    "url": "git+https://github.com/chochkimhour/api-core-auth.git"
   },
   "bugs": {
-    "url": "https://gitlab.com/chochkimhour/api-core-auth/-/issues"
+    "url": "https://github.com/chochkimhour/api-core-auth/issues"
   },
   "keywords": [
     "auth",
