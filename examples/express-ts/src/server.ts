@@ -1,0 +1,104 @@
+import express, { type Request, type Response } from "express";
+import {
+  authMiddleware,
+  comparePassword,
+  generateAccessToken,
+  generateRefreshToken,
+  optionalAuthMiddleware,
+  roleMiddleware,
+  type AuthUser
+} from "api-core-auth";
+
+const app = express();
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
+
+app.use(express.json());
+
+app.post("/login", async (req: Request, res: Response) => {
+  const user = {
+    id: "1",
+    email: "admin@example.com",
+    password: "$2a$10$1Yyt8Txs5SkApwvEI5qtl.UTs8ZPMZ0OPWTSnFF0UU/eei9IkwfMa",
+    role: "ADMIN"
+  };
+
+  const isValidPassword = await comparePassword(req.body.password, user.password);
+
+  if (!isValidPassword) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid email or password"
+    });
+  }
+
+  const authUser: AuthUser = {
+    id: user.id,
+    email: user.email,
+    role: user.role
+  };
+
+  const accessToken = generateAccessToken(authUser, JWT_SECRET!, {
+    expiresIn: "15m"
+  });
+  const refreshToken = generateRefreshToken({ id: user.id }, JWT_REFRESH_SECRET!, {
+    expiresIn: "7d"
+  });
+
+  return res.json({
+    success: true,
+    message: "Login successful",
+    data: {
+      accessToken,
+      refreshToken
+    }
+  });
+});
+
+app.get(
+  "/profile",
+  authMiddleware({
+    secret: JWT_SECRET!
+  }),
+  (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      message: "Profile fetched successfully",
+      data: req.user
+    });
+  }
+);
+
+app.get(
+  "/admin",
+  authMiddleware({
+    secret: JWT_SECRET!
+  }),
+  roleMiddleware(["ADMIN"]),
+  (_req: Request, res: Response) => {
+    res.json({
+      success: true,
+      message: "Admin route accessed successfully"
+    });
+  }
+);
+
+app.get(
+  "/public",
+  optionalAuthMiddleware({
+    secret: JWT_SECRET!
+  }),
+  (req: Request, res: Response) => {
+    res.json({
+      success: true,
+      data: {
+        authenticated: Boolean(req.user),
+        user: req.user || null
+      }
+    });
+  }
+);
+
+app.listen(3000, () => {
+  console.log("Server running on port 3000");
+});

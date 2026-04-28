@@ -1,0 +1,87 @@
+{
+  "name": "api-core-auth",
+  "version": "0.1.0",
+  "description": "Reusable JWT authentication helpers, password utilities, Express middleware, errors, and TypeScript types for Node.js APIs.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Choch Kimhour",
+  "homepage": "https://github.com/your-org/api-core-auth#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/api-core-auth.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/api-core-auth/issues"
+  },
+  "keywords": [
+    "auth",
+    "authentication",
+    "authorization",
+    "jwt",
+    "jsonwebtoken",
+    "bcrypt",
+    "bcryptjs",
+    "express",
+    "middleware",
+    "node",
+    "typescript",
+    "api",
+    "security"
+  ],
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "peerDependencies": {
+    "express": ">=4.17.0 || >=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.25.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/express": "^5.0.1",
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^22.14.1",
+    "eslint": "^9.25.1",
+    "prettier": "^3.5.3",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.31.0",
+    "vitest": "^3.1.2"
+  }
+}

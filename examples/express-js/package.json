@@ -1,0 +1,12 @@
+{
+  "name": "api-core-auth-express-js-example",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "api-core-auth": "file:../..",
+    "express": "^4.18.3"
+  }
+}
