@@ -5,13 +5,13 @@
   "type": "module",
   "license": "MIT",
   "author": "Choch Kimhour",
-  "homepage": "https://github.com/your-org/api-core-auth#readme",
+  "homepage": "https://gitlab.com/chochkimhour/api-core-auth#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/your-org/api-core-auth.git"
+    "url": "git+https://gitlab.com/chochkimhour/api-core-auth.git"
   },
   "bugs": {
-    "url": "https://github.com/your-org/api-core-auth/issues"
+    "url": "https://gitlab.com/chochkimhour/api-core-auth/-/issues"
   },
   "keywords": [
     "auth",

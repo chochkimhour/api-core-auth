@@ -1,11 +1,19 @@
 # api-core-auth
 
 [![npm](https://img.shields.io/npm/v/api-core-auth?label=npm&color=cb3837)](https://www.npmjs.com/package/api-core-auth)
+[![npm downloads](https://img.shields.io/npm/dm/api-core-auth?label=downloads&color=2f6fdd)](https://www.npmjs.com/package/api-core-auth)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](package.json)
 [![types: included](https://img.shields.io/badge/types-included-0f8fcf.svg)](package.json)
+[![source](https://img.shields.io/badge/source-GitLab-fc6d26.svg)](https://gitlab.com/chochkimhour/api-core-auth)
 
 Secure opaque-token authentication helpers, password utilities, Express middleware, error classes, and TypeScript types for production Node.js APIs.
+
+## Links
+
+- npm: [api-core-auth](https://www.npmjs.com/package/api-core-auth)
+- Source code: [gitlab.com/chochkimhour/api-core-auth](https://gitlab.com/chochkimhour/api-core-auth)
+- Issues: [GitLab issues](https://gitlab.com/chochkimhour/api-core-auth/-/issues)
 
 ## What Is api-core-auth?
 
