@@ -10,7 +10,7 @@ import {
 } from "api-core-auth";
 
 const app = express();
-const tokenPepper = process.env.OPAQUE_TOKEN_PEPPER;
+const opaqueTokenSecret = process.env.OPAQUE_TOKEN;
 
 const tokenStore = new Map<
   string,
@@ -41,7 +41,7 @@ app.post("/login", async (req: Request, res: Response) => {
 
   const safeUser = sanitizeUser(user) as AuthUser;
   const authToken = createOpaqueToken({
-    pepper: tokenPepper
+    pepper: opaqueTokenSecret
   });
 
   tokenStore.set(String(user.id), {
@@ -61,7 +61,7 @@ app.post("/login", async (req: Request, res: Response) => {
 
 const verifyStoredToken = (token: string): AuthUser | null => {
   for (const session of tokenStore.values()) {
-    if (compareOpaqueToken(token, session.tokenHash, tokenPepper)) {
+    if (compareOpaqueToken(token, session.tokenHash, opaqueTokenSecret)) {
       return session.user;
     }
   }

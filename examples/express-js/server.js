@@ -9,7 +9,7 @@ const {
 } = require("api-core-auth");
 
 const app = express();
-const tokenPepper = process.env.OPAQUE_TOKEN_PEPPER;
+const opaqueTokenSecret = process.env.OPAQUE_TOKEN;
 
 const tokenStore = new Map();
 
@@ -33,7 +33,7 @@ app.post("/login", async (req, res) => {
   }
 
   const authToken = createOpaqueToken({
-    pepper: tokenPepper
+    pepper: opaqueTokenSecret
   });
 
   tokenStore.set(user.id, {
@@ -56,7 +56,7 @@ app.get(
   authMiddleware({
     verifyToken: (token) => {
       for (const session of tokenStore.values()) {
-        if (compareOpaqueToken(token, session.tokenHash, tokenPepper)) {
+        if (compareOpaqueToken(token, session.tokenHash, opaqueTokenSecret)) {
           return session.user;
         }
       }
@@ -78,7 +78,7 @@ app.get(
   authMiddleware({
     verifyToken: (token) => {
       for (const session of tokenStore.values()) {
-        if (compareOpaqueToken(token, session.tokenHash, tokenPepper)) {
+        if (compareOpaqueToken(token, session.tokenHash, opaqueTokenSecret)) {
           return session.user;
         }
       }

@@ -107,7 +107,7 @@ npm install express
 Use a server-side pepper when hashing opaque tokens. Keep it secret.
 
 ```env
-OPAQUE_TOKEN_PEPPER=replace-with-a-long-random-server-side-secret
+OPAQUE_TOKEN=replace-with-a-long-random-server-side-secret
 ```
 
 The pepper is optional, but recommended. It adds an extra server-side secret to token hashing.
@@ -128,7 +128,7 @@ const {
 } = require("api-core-auth");
 
 const app = express();
-const tokenPepper = process.env.OPAQUE_TOKEN_PEPPER;
+const opaqueTokenSecret = process.env.OPAQUE_TOKEN;
 const tokenStore = new Map();
 
 app.use(express.json());
@@ -152,7 +152,7 @@ app.post("/login", async (req, res) => {
 
   const safeUser = sanitizeUser(user);
   const authToken = createOpaqueToken({
-    pepper: tokenPepper
+    pepper: opaqueTokenSecret
   });
 
   tokenStore.set(user.id, {
@@ -172,7 +172,7 @@ app.post("/login", async (req, res) => {
 
 const verifyStoredToken = (token) => {
   for (const session of tokenStore.values()) {
-    if (compareOpaqueToken(token, session.tokenHash, tokenPepper)) {
+    if (compareOpaqueToken(token, session.tokenHash, opaqueTokenSecret)) {
       return session.user;
     }
   }
@@ -337,7 +337,7 @@ import { createOpaqueToken } from "api-core-auth";
 
 const authToken = createOpaqueToken({
   byteLength: 32,
-  pepper: process.env.OPAQUE_TOKEN_PEPPER
+  pepper: process.env.OPAQUE_TOKEN
 });
 
 // Send authToken.token to the client.
@@ -352,7 +352,7 @@ import { compareOpaqueToken } from "api-core-auth";
 const isValidToken = compareOpaqueToken(
   tokenFromRequest,
   storedTokenHash,
-  process.env.OPAQUE_TOKEN_PEPPER
+  process.env.OPAQUE_TOKEN
 );
 ```
 
@@ -371,7 +371,7 @@ import { createOpaqueToken } from "api-core-auth";
 
 const resetToken = createOpaqueToken({
   byteLength: 32,
-  pepper: process.env.OPAQUE_TOKEN_PEPPER
+  pepper: process.env.OPAQUE_TOKEN
 });
 
 // Email resetToken.token to the user.
@@ -427,7 +427,7 @@ app.get(
   "/profile",
   authMiddleware({
     verifyToken: async (token) => {
-      const tokenHash = hashOpaqueToken(token, process.env.OPAQUE_TOKEN_PEPPER);
+      const tokenHash = hashOpaqueToken(token, process.env.OPAQUE_TOKEN);
       const session = await db.sessions.findUnique({
         where: {
           tokenHash
