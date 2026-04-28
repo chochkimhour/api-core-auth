@@ -1,128 +1,97 @@
 # api-core-auth
 
-JWT authentication helpers, password utilities, Express middleware, error classes, and TypeScript types for modern Node.js APIs.
+[![npm](https://img.shields.io/npm/v/api-core-auth?label=npm&color=cb3837)](https://www.npmjs.com/package/api-core-auth)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](package.json)
+[![types: included](https://img.shields.io/badge/types-included-0f8fcf.svg)](package.json)
+
+Reusable JWT authentication helpers, password utilities, Express middleware, error classes, and TypeScript types for production Node.js APIs.
 
 ## What Is api-core-auth?
 
-`api-core-auth` is a reusable authentication utility package for JavaScript and TypeScript backend projects. It gives you the core building blocks commonly needed in real-world API authentication:
+`api-core-auth` is a small authentication toolkit for JavaScript and TypeScript backend projects.
 
-- Generate and verify JWT access tokens.
-- Generate refresh tokens.
+It helps you handle the common authentication tasks that many APIs need:
+
+- Create JWT access tokens.
+- Create JWT refresh tokens.
+- Verify and decode JWT tokens.
+- Extract Bearer tokens from request headers.
 - Hash and compare passwords with bcrypt.
+- Validate password strength.
 - Protect Express routes with authentication middleware.
-- Restrict routes by role.
-- Safely sanitize user objects before returning them from APIs.
-- Use consistent auth errors and strong TypeScript types.
+- Restrict routes by user role.
+- Remove password fields before returning user objects.
+- Use consistent authentication error classes.
+- Use strong TypeScript types in your app.
 
-The package is intentionally database-agnostic. It does **not** register users, query users, validate login credentials from a database, or store refresh tokens. Your application controls those responsibilities.
+The package is designed for real-world backend APIs, but it stays flexible. It does not force a database, user model, session model, or application structure.
 
 ## Why Use It?
 
-Authentication code is repeated in almost every backend project. `api-core-auth` helps you avoid rewriting the same JWT, bcrypt, middleware, and error-handling utilities again and again.
+Most backend projects need the same authentication tools. `api-core-auth` keeps those parts clean, reusable, and easy to understand.
 
 Use it when you want:
 
-- A clean reusable auth foundation for production APIs.
-- JavaScript and TypeScript support from one package.
-- CommonJS `require()` and ESM `import` compatibility.
-- Strong TypeScript types and generated declaration files.
-- Express middleware that works with your own database logic.
-- Safe error classes that avoid leaking internal details.
-- A small package focused only on reusable authentication primitives.
-- npm-ready build output with clean package exports.
+- A simple auth foundation for Node.js APIs.
+- JavaScript and TypeScript support.
+- CommonJS `require()` support.
+- ES module `import` support.
+- Ready-to-use Express middleware.
+- Framework-independent JWT and password helpers.
+- Safe package error classes.
+- TypeScript types included.
+- No database lock-in.
+- No hidden user-management logic.
 
-## Framework Compatibility
+## What This Package Does
 
-`api-core-auth` works with any Node.js backend through its framework-independent JWT, password, utility, error, and TypeScript helpers.
+`api-core-auth` provides reusable authentication helpers only.
 
-It includes ready-to-use middleware for:
+It can:
 
-- Express.js
-- Express-compatible frameworks
-- NestJS projects using the Express adapter
+- Generate access tokens.
+- Generate refresh tokens.
+- Verify tokens.
+- Decode tokens.
+- Parse Bearer tokens.
+- Hash passwords.
+- Compare passwords.
+- Validate password strength.
+- Add authenticated users to Express requests.
+- Check roles in Express routes.
+- Sanitize user objects.
+- Create auth response objects.
+- Throw safe authentication errors.
 
-The core helpers can also be used with other backend frameworks by adapting them to that framework's request lifecycle:
+## What This Package Does Not Do
 
-- Fastify
-- Koa
-- Hapi
-- Next.js API routes
-- Nuxt/Nitro server routes
-- AdonisJS
-- Native Node.js HTTP servers
-- Any custom Node.js backend
+This package intentionally does not own your application logic.
 
-For non-Express frameworks, use helpers such as `verifyToken()`, `extractBearerToken()`, `hashPassword()`, and `comparePassword()` inside your own middleware, hook, guard, or request handler.
-
-## Important Design Principles
-
-`api-core-auth` is not a full authentication server. It is a toolkit.
-
-This package does **not**:
+It does **not**:
 
 - Connect to a database.
 - Register users.
-- Look up users during login.
-- Validate an email and password against stored users.
-- Store, rotate, or revoke refresh tokens.
-- Decide your app's user model.
+- Find users by email.
+- Validate login credentials from a database.
+- Store refresh tokens.
+- Rotate refresh tokens.
+- Revoke refresh tokens.
+- Decide your user schema.
+- Manage sessions for you.
 
 Your application is responsible for:
 
 - User registration.
-- Login lookup and validation.
+- User lookup.
+- Password validation flow.
 - Database queries.
-- Refresh-token storage and revocation.
-- Session policy.
-- Environment variables and secret management.
+- Refresh-token storage.
+- Refresh-token revocation.
+- Secret management.
+- Application-specific authorization rules.
 
-This separation keeps the package flexible, secure, and useful across many Node.js API projects.
-
-## Features
-
-### JWT Helpers
-
-- `generateAccessToken()`
-- `generateRefreshToken()`
-- `generateToken()`
-- `verifyToken()`
-- `decodeToken()`
-- `extractBearerToken()`
-
-### Password Helpers
-
-- `hashPassword()`
-- `comparePassword()`
-- `validatePasswordStrength()`
-
-### Express Middleware
-
-- `authMiddleware()`
-- `optionalAuthMiddleware()`
-- `roleMiddleware()`
-
-### Utility Helpers
-
-- `sanitizeUser()`
-- `createAuthResponse()`
-- `getAuthUser()`
-
-### Error Classes
-
-- `AuthError`
-- `UnauthorizedError`
-- `ForbiddenError`
-- `InvalidTokenError`
-- `TokenExpiredAuthError`
-
-### TypeScript Types
-
-- `AuthUser`
-- `JwtPayload`
-- `AuthConfig`
-- `TokenPair`
-- `AuthMiddlewareOptions`
-- `Role`
+This keeps the package clean, predictable, and useful across many projects.
 
 ## Installation
 
@@ -130,19 +99,91 @@ This separation keeps the package flexible, secure, and useful across many Node.
 npm install api-core-auth
 ```
 
-Install Express if you want to use the middleware:
+If you want to use the Express middleware, install Express in your application:
 
 ```bash
 npm install express
 ```
 
-## Environment Variables
+## Quick Start
 
-Never hardcode JWT secrets in source code.
+```js
+const express = require("express");
+const {
+  comparePassword,
+  generateAccessToken,
+  authMiddleware,
+  roleMiddleware
+} = require("api-core-auth");
 
-```env
-JWT_SECRET=replace-with-a-long-random-secret
-JWT_REFRESH_SECRET=replace-with-another-long-random-secret
+const app = express();
+
+app.use(express.json());
+
+app.post("/login", async (req, res) => {
+  const user = {
+    id: "1",
+    email: "admin@example.com",
+    password: "$2b$10$hashedPassword",
+    role: "ADMIN"
+  };
+
+  const isValidPassword = await comparePassword(req.body.password, user.password);
+
+  if (!isValidPassword) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid email or password"
+    });
+  }
+
+  const accessToken = generateAccessToken(
+    {
+      id: user.id,
+      email: user.email,
+      role: user.role
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "15m"
+    }
+  );
+
+  return res.json({
+    success: true,
+    message: "Login successful",
+    data: {
+      accessToken
+    }
+  });
+});
+
+app.get(
+  "/profile",
+  authMiddleware({
+    secret: process.env.JWT_SECRET
+  }),
+  (req, res) => {
+    res.json({
+      success: true,
+      data: req.user
+    });
+  }
+);
+
+app.get(
+  "/admin",
+  authMiddleware({
+    secret: process.env.JWT_SECRET
+  }),
+  roleMiddleware(["ADMIN"]),
+  (_req, res) => {
+    res.json({
+      success: true,
+      message: "Admin route accessed successfully"
+    });
+  }
+);
 ```
 
 ## JavaScript Usage
@@ -172,17 +213,105 @@ import {
 } from "api-core-auth";
 ```
 
-## JWT Helper Examples
+## Environment Variables
+
+Keep secrets outside your source code.
+
+```env
+JWT_SECRET=replace-with-a-long-random-secret
+JWT_REFRESH_SECRET=replace-with-another-long-random-secret
+```
+
+Recommended usage:
+
+- Use a long random secret.
+- Use different secrets for access tokens and refresh tokens when possible.
+- Keep access-token expiration short.
+- Store secrets in your environment or secret manager.
+
+## Framework Compatibility
+
+`api-core-auth` works with any Node.js backend through its framework-independent helpers.
+
+Ready-to-use middleware is included for:
+
+- Express.js
+- Express-compatible frameworks
+- NestJS projects using the Express adapter
+
+The core helpers can be used with:
+
+- Fastify
+- Koa
+- Hapi
+- Next.js API routes
+- Nuxt/Nitro server routes
+- AdonisJS
+- Native Node.js HTTP servers
+- Custom Node.js backends
+
+For non-Express frameworks, use helpers such as `verifyToken()`, `extractBearerToken()`, `hashPassword()`, and `comparePassword()` inside your own middleware, hook, guard, or request handler.
+
+## Features
+
+### JWT Helpers
+
+| Function | Purpose |
+| --- | --- |
+| `generateAccessToken()` | Create a JWT access token. |
+| `generateRefreshToken()` | Create a JWT refresh token. |
+| `generateToken()` | Create a custom JWT token. |
+| `verifyToken()` | Verify a token and return its payload. |
+| `decodeToken()` | Decode a token without verifying it. |
+| `extractBearerToken()` | Extract a token from a Bearer authorization header. |
+
+### Password Helpers
+
+| Function | Purpose |
+| --- | --- |
+| `hashPassword()` | Hash a password with bcryptjs. |
+| `comparePassword()` | Compare a plain password with a hash. |
+| `validatePasswordStrength()` | Validate password strength rules. |
+
+### Express Middleware
+
+| Function | Purpose |
+| --- | --- |
+| `authMiddleware()` | Require a valid JWT and attach `req.user`. |
+| `optionalAuthMiddleware()` | Attach `req.user` when a valid token exists, but allow guests. |
+| `roleMiddleware()` | Require one or more allowed roles. |
+
+### Utilities
+
+| Function | Purpose |
+| --- | --- |
+| `sanitizeUser()` | Remove sensitive fields from a user object. |
+| `createAuthResponse()` | Create a consistent auth success response. |
+| `getAuthUser()` | Read `req.user` or throw `UnauthorizedError`. |
+
+### Error Classes
+
+- `AuthError`
+- `UnauthorizedError`
+- `ForbiddenError`
+- `InvalidTokenError`
+- `TokenExpiredAuthError`
+
+### TypeScript Types
+
+- `AuthUser`
+- `JwtPayload`
+- `AuthConfig`
+- `TokenPair`
+- `AuthMiddlewareOptions`
+- `Role`
+
+## JWT Examples
+
+### Generate an Access Token
 
 ```ts
-import {
-  decodeToken,
-  extractBearerToken,
-  generateAccessToken,
-  generateRefreshToken,
-  generateToken,
-  verifyToken
-} from "api-core-auth";
+import { generateAccessToken } from "api-core-auth";
 
 const accessToken = generateAccessToken(
   {
@@ -195,6 +324,12 @@ const accessToken = generateAccessToken(
     expiresIn: "15m"
   }
 );
+```
+
+### Generate a Refresh Token
+
+```ts
+import { generateRefreshToken } from "api-core-auth";
 
 const refreshToken = generateRefreshToken(
   {
@@ -205,32 +340,60 @@ const refreshToken = generateRefreshToken(
     expiresIn: "7d"
   }
 );
-
-const customToken = generateToken(
-  {
-    id: "1",
-    purpose: "email-verification"
-  },
-  process.env.JWT_SECRET!,
-  {
-    expiresIn: "10m",
-    issuer: "my-api"
-  }
-);
-
-const payload = verifyToken(accessToken, process.env.JWT_SECRET!);
-const decoded = decodeToken(accessToken);
-const tokenFromHeader = extractBearerToken("Bearer eyJhbGciOi...");
 ```
 
-Use `verifyToken()` for authentication and authorization decisions. Use `decodeToken()` only when you need to inspect token contents without trusting them.
+Your application should store, rotate, and revoke refresh tokens if your auth flow needs refresh-token sessions.
 
-## Password Helper Examples
+### Verify a Token
 
 ```ts
-import { comparePassword, hashPassword, validatePasswordStrength } from "api-core-auth";
+import { verifyToken } from "api-core-auth";
 
-const strength = validatePasswordStrength("Password123", {
+const payload = verifyToken(accessToken, process.env.JWT_SECRET!);
+```
+
+### Decode a Token
+
+```ts
+import { decodeToken } from "api-core-auth";
+
+const decoded = decodeToken(accessToken);
+```
+
+Use `decodeToken()` only for inspection. Do not use decoded-only data for authentication or authorization.
+
+### Extract a Bearer Token
+
+```ts
+import { extractBearerToken } from "api-core-auth";
+
+const token = extractBearerToken("Bearer eyJhbGciOi...");
+```
+
+## Password Examples
+
+### Hash a Password
+
+```ts
+import { hashPassword } from "api-core-auth";
+
+const passwordHash = await hashPassword("Password123", 12);
+```
+
+### Compare a Password
+
+```ts
+import { comparePassword } from "api-core-auth";
+
+const isValidPassword = await comparePassword("Password123", passwordHash);
+```
+
+### Validate Password Strength
+
+```ts
+import { validatePasswordStrength } from "api-core-auth";
+
+const result = validatePasswordStrength("Password123", {
   minLength: 8,
   requireUppercase: true,
   requireLowercase: true,
@@ -238,17 +401,16 @@ const strength = validatePasswordStrength("Password123", {
   requireSymbol: false
 });
 
-if (!strength.valid) {
-  throw new Error(strength.errors.join(", "));
+if (!result.valid) {
+  console.log(result.errors);
 }
-
-const passwordHash = await hashPassword("Password123", 12);
-const isValidPassword = await comparePassword("Password123", passwordHash);
 ```
 
-## Express Login Example
+## Express Examples
 
-The package does not look up users from your database. Your app fetches the user, validates the password, and then uses `api-core-auth` to create tokens.
+### Login Route
+
+Your app fetches the user from your database. Then `api-core-auth` helps compare the password and create tokens.
 
 ```js
 const express = require("express");
@@ -302,13 +464,10 @@ app.post("/login", async (req, res) => {
 });
 ```
 
-## Protected Route Example
+### Protected Route
 
 ```ts
-import express from "express";
 import { authMiddleware } from "api-core-auth";
-
-const app = express();
 
 app.get(
   "/profile",
@@ -325,7 +484,7 @@ app.get(
 );
 ```
 
-## Role Middleware Example
+### Role-Protected Route
 
 ```ts
 import { authMiddleware, roleMiddleware } from "api-core-auth";
@@ -345,11 +504,11 @@ app.get(
 );
 ```
 
-`roleMiddleware()` checks `req.user.role` and `req.user.roles`. Access is allowed when at least one required role matches.
+`roleMiddleware()` checks both `req.user.role` and `req.user.roles`.
 
-## Optional Auth Middleware Example
+### Optional Authentication
 
-Use optional auth for routes that work for both guests and logged-in users.
+Use optional authentication for routes that support both guests and signed-in users.
 
 ```ts
 import { optionalAuthMiddleware } from "api-core-auth";
@@ -371,29 +530,43 @@ app.get(
 );
 ```
 
-## Refresh Token Example
+## Utility Examples
 
-`api-core-auth` can generate and verify refresh tokens, but your app must store and revoke them.
+### Sanitize a User
 
 ```ts
-import { generateRefreshToken, verifyToken } from "api-core-auth";
+import { sanitizeUser } from "api-core-auth";
 
-const refreshToken = generateRefreshToken(
-  {
-    id: user.id
-  },
-  process.env.JWT_REFRESH_SECRET!,
-  {
-    expiresIn: "7d"
-  }
-);
-
-// Store the refresh token hash in your database if your app needs revocation.
-
-const payload = verifyToken(refreshToken, process.env.JWT_REFRESH_SECRET!);
+const safeUser = sanitizeUser({
+  id: "1",
+  email: "admin@example.com",
+  password: "secret",
+  role: "ADMIN"
+});
 ```
 
-## Error Handling Example
+### Create an Auth Response
+
+```ts
+import { createAuthResponse } from "api-core-auth";
+
+const response = createAuthResponse({
+  user: safeUser,
+  accessToken,
+  refreshToken,
+  message: "Login successful"
+});
+```
+
+### Get the Authenticated User
+
+```ts
+import { getAuthUser } from "api-core-auth";
+
+const currentUser = getAuthUser(req);
+```
+
+## Error Handling
 
 ```ts
 import { AuthError } from "api-core-auth";
@@ -414,96 +587,46 @@ app.use((err, _req, res, _next) => {
 });
 ```
 
-## Utility Examples
-
-```ts
-import { createAuthResponse, getAuthUser, sanitizeUser } from "api-core-auth";
-
-const safeUser = sanitizeUser(user);
-
-const response = createAuthResponse({
-  user: safeUser,
-  accessToken,
-  refreshToken,
-  message: "Login successful"
-});
-
-const currentUser = getAuthUser(req);
-```
-
 ## API Reference
 
-### `generateToken(payload, secret, options?)`
+### JWT
 
-Signs a JWT payload using `jsonwebtoken`.
+| API | Description |
+| --- | --- |
+| `generateToken(payload, secret, options?)` | Signs a custom JWT payload. |
+| `generateAccessToken(user, secret, options?)` | Signs an access token. Default expiration is `15m`. |
+| `generateRefreshToken(user, secret, options?)` | Signs a refresh token. Default expiration is `7d`. |
+| `verifyToken(token, secret, options?)` | Verifies a token and returns the payload. |
+| `decodeToken(token, options?)` | Decodes a token without verifying it. |
+| `extractBearerToken(header)` | Returns a token from a valid Bearer header or `null`. |
 
-### `generateAccessToken(user, secret, options?)`
+### Password
 
-Signs an access token. Default expiration is `15m`, and you can override it with `options.expiresIn`.
+| API | Description |
+| --- | --- |
+| `hashPassword(password, saltRounds?)` | Hashes a password. Default salt rounds: `10`. |
+| `comparePassword(password, passwordHash)` | Compares a password with a bcrypt hash. |
+| `validatePasswordStrength(password, options?)` | Returns password strength status, score, and errors. |
 
-### `generateRefreshToken(user, secret, options?)`
+### Middleware
 
-Signs a refresh token. Default expiration is `7d`, and you can override it with `options.expiresIn`.
+| API | Description |
+| --- | --- |
+| `authMiddleware(options)` | Requires a valid token and attaches `req.user`. |
+| `optionalAuthMiddleware(options)` | Allows guests and attaches `req.user` when a valid token exists. |
+| `roleMiddleware(roles)` | Requires the authenticated user to have an allowed role. |
 
-### `verifyToken(token, secret, options?)`
+### Utilities
 
-Verifies a token and returns the decoded payload. Throws `InvalidTokenError` or `TokenExpiredAuthError` for safe API handling.
-
-### `decodeToken(token, options?)`
-
-Decodes token contents without verification. Do not use decoded-only data for authorization decisions.
-
-### `extractBearerToken(authorizationHeader)`
-
-Returns the token from a valid `Bearer <token>` authorization header. Returns `null` for malformed headers.
-
-### `hashPassword(password, saltRounds?)`
-
-Hashes a password with bcryptjs. Default salt rounds: `10`.
-
-### `comparePassword(password, passwordHash)`
-
-Compares a plain password against a bcrypt hash.
-
-### `validatePasswordStrength(password, options?)`
-
-Checks password strength and returns:
-
-```ts
-{
-  valid: boolean;
-  score: number;
-  errors: string[];
-}
-```
-
-### `authMiddleware(options)`
-
-Requires a valid Bearer token and attaches `req.user` and `req.auth`.
-
-### `optionalAuthMiddleware(options)`
-
-Attempts authentication when a token exists. Continues without failing when the token is missing or invalid.
-
-### `roleMiddleware(roles)`
-
-Requires the authenticated user to have at least one matching role.
-
-### `sanitizeUser(user, sensitiveKeys?)`
-
-Removes sensitive fields such as `password`, `passwordHash`, `hashedPassword`, `salt`, and reset tokens.
-
-### `createAuthResponse(options)`
-
-Creates a consistent authentication success response.
-
-### `getAuthUser(req)`
-
-Returns the authenticated request user or throws `UnauthorizedError`.
+| API | Description |
+| --- | --- |
+| `sanitizeUser(user, sensitiveKeys?)` | Removes sensitive fields from user objects. |
+| `createAuthResponse(options)` | Creates a consistent auth success response. |
+| `getAuthUser(req)` | Returns `req.user` or throws `UnauthorizedError`. |
 
 ## TypeScript Support
 
-The package is written in TypeScript and publishes declaration files.
+The package includes TypeScript types for safer application code.
 
 ```ts
 import type {
@@ -518,47 +641,20 @@ import type {
 
 Express request augmentation is included, so `req.user` is available after using the middleware.
 
-## Build Output
-
-The package supports both module systems:
-
-- CommonJS: `require("api-core-auth")`
-- ESM: `import { authMiddleware } from "api-core-auth"`
-- Types: `dist/index.d.ts`
-
 ## Security Notes
 
 - Never hardcode JWT secrets.
 - Use long, random secrets from environment variables or a secret manager.
 - Prefer separate secrets for access tokens and refresh tokens.
-- Always set short expiration for access tokens.
-- Store refresh tokens in your own database only if your app needs refresh-token sessions.
+- Keep access-token expiration short.
+- Store refresh tokens in your own database if your app uses refresh-token sessions.
 - Hash refresh tokens before storing them.
-- Do not expose password fields in API responses.
+- Never return password fields in API responses.
 - Return generic login errors such as `Invalid email or password`.
 - Use HTTPS in production.
 - Use `verifyToken()` before trusting token data.
+- Do not use `decodeToken()` for authorization.
 - Avoid returning raw internal errors to API users.
-
-## Development
-
-```bash
-npm install
-npm run lint
-npm run typecheck
-npm test
-npm run build
-```
-
-## npm Publishing
-
-Before publishing, update the package metadata in `package.json`, then run:
-
-```bash
-npm publish
-```
-
-The `prepublishOnly` script runs linting, type checking, tests, and build.
 
 ## Contributing
 
