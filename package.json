@@ -1,6 +1,6 @@
 {
   "name": "api-core-auth",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Secure opaque token authentication for Node.js, Express, JavaScript, and TypeScript APIs with password helpers, middleware, errors, and types.",
   "type": "module",
   "license": "MIT",
