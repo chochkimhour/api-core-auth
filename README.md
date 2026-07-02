@@ -455,37 +455,37 @@ For non-Express frameworks, use `extractBearerToken()`, `compareOpaqueToken()`, 
 
 ### Opaque Token Helpers
 
-| Function | Purpose |
-| --- | --- |
-| `generateOpaqueToken()` | Create a secure random token with no readable payload. |
-| `hashOpaqueToken()` | Hash an opaque token before storing it. |
-| `compareOpaqueToken()` | Compare a raw opaque token with a stored hash. |
-| `createOpaqueToken()` | Create a raw opaque token and storage-safe hash together. |
-| `extractBearerToken()` | Extract a token from a Bearer authorization header. |
+| Function                | Purpose                                                   |
+| ----------------------- | --------------------------------------------------------- |
+| `generateOpaqueToken()` | Create a secure random token with no readable payload.    |
+| `hashOpaqueToken()`     | Hash an opaque token before storing it.                   |
+| `compareOpaqueToken()`  | Compare a raw opaque token with a stored hash.            |
+| `createOpaqueToken()`   | Create a raw opaque token and storage-safe hash together. |
+| `extractBearerToken()`  | Extract a token from a Bearer authorization header.       |
 
 ### Password Helpers
 
-| Function | Purpose |
-| --- | --- |
-| `hashPassword()` | Hash a password with bcryptjs. |
-| `comparePassword()` | Compare a plain password with a hash. |
-| `validatePasswordStrength()` | Validate password strength rules. |
+| Function                     | Purpose                               |
+| ---------------------------- | ------------------------------------- |
+| `hashPassword()`             | Hash a password with bcryptjs.        |
+| `comparePassword()`          | Compare a plain password with a hash. |
+| `validatePasswordStrength()` | Validate password strength rules.     |
 
 ### Express Middleware
 
-| Function | Purpose |
-| --- | --- |
-| `authMiddleware()` | Require a valid opaque token and attach `req.user`. |
+| Function                   | Purpose                                                        |
+| -------------------------- | -------------------------------------------------------------- |
+| `authMiddleware()`         | Require a valid opaque token and attach `req.user`.            |
 | `optionalAuthMiddleware()` | Attach `req.user` when a valid token exists, but allow guests. |
-| `roleMiddleware()` | Require one or more allowed roles. |
+| `roleMiddleware()`         | Require one or more allowed roles.                             |
 
 ### Utilities
 
-| Function | Purpose |
-| --- | --- |
-| `sanitizeUser()` | Remove sensitive fields from a user object. |
-| `createAuthResponse()` | Create a consistent auth success response. |
-| `getAuthUser()` | Read `req.user` or throw `UnauthorizedError`. |
+| Function               | Purpose                                       |
+| ---------------------- | --------------------------------------------- |
+| `sanitizeUser()`       | Remove sensitive fields from a user object.   |
+| `createAuthResponse()` | Create a consistent auth success response.    |
+| `getAuthUser()`        | Read `req.user` or throw `UnauthorizedError`. |
 
 ### Error Classes
 
@@ -733,37 +733,37 @@ app.use((err, _req, res, _next) => {
 
 ### Opaque Tokens
 
-| API | Description |
-| --- | --- |
-| `generateOpaqueToken(options?)` | Creates a secure random token with no readable payload. |
-| `hashOpaqueToken(token, pepper?)` | Creates a SHA-256 hash for database storage. |
+| API                                             | Description                                                             |
+| ----------------------------------------------- | ----------------------------------------------------------------------- |
+| `generateOpaqueToken(options?)`                 | Creates a secure random token with no readable payload.                 |
+| `hashOpaqueToken(token, pepper?)`               | Creates a SHA-256 hash for database storage.                            |
 | `compareOpaqueToken(token, tokenHash, pepper?)` | Compares a raw token with a stored hash using constant-time comparison. |
-| `createOpaqueToken(options?)` | Returns `{ token, tokenHash }` for send-and-store flows. |
-| `extractBearerToken(header)` | Returns a token from a valid Bearer header or `null`. |
+| `createOpaqueToken(options?)`                   | Returns `{ token, tokenHash }` for send-and-store flows.                |
+| `extractBearerToken(header)`                    | Returns a token from a valid Bearer header or `null`.                   |
 
 ### Password
 
-| API | Description |
-| --- | --- |
-| `hashPassword(password, saltRounds?)` | Hashes a password. Default salt rounds: `10`. |
-| `comparePassword(password, passwordHash)` | Compares a password with a bcrypt hash. |
+| API                                            | Description                                          |
+| ---------------------------------------------- | ---------------------------------------------------- |
+| `hashPassword(password, saltRounds?)`          | Hashes a password. Default salt rounds: `10`.        |
+| `comparePassword(password, passwordHash)`      | Compares a password with a bcrypt hash.              |
 | `validatePasswordStrength(password, options?)` | Returns password strength status, score, and errors. |
 
 ### Middleware
 
-| API | Description |
-| --- | --- |
-| `authMiddleware(options)` | Requires a valid token and attaches `req.user`. |
+| API                               | Description                                                      |
+| --------------------------------- | ---------------------------------------------------------------- |
+| `authMiddleware(options)`         | Requires a valid token and attaches `req.user`.                  |
 | `optionalAuthMiddleware(options)` | Allows guests and attaches `req.user` when a valid token exists. |
-| `roleMiddleware(roles)` | Requires the authenticated user to have an allowed role. |
+| `roleMiddleware(roles)`           | Requires the authenticated user to have an allowed role.         |
 
 ### Utilities
 
-| API | Description |
-| --- | --- |
-| `sanitizeUser(user, sensitiveKeys?)` | Removes sensitive fields from user objects. |
-| `createAuthResponse(options)` | Creates a consistent auth success response. |
-| `getAuthUser(req)` | Returns `req.user` or throws `UnauthorizedError`. |
+| API                                  | Description                                       |
+| ------------------------------------ | ------------------------------------------------- |
+| `sanitizeUser(user, sensitiveKeys?)` | Removes sensitive fields from user objects.       |
+| `createAuthResponse(options)`        | Creates a consistent auth success response.       |
+| `getAuthUser(req)`                   | Returns `req.user` or throws `UnauthorizedError`. |
 
 ## TypeScript Support
 
@@ -799,4 +799,4 @@ See `CONTRIBUTING.md` for contribution details.
 
 MIT License.
 
-Copyright (c) 2026 Choch Kimhour.
+Copyright (c) 2026.
